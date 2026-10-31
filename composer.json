@@ -1,0 +1,46 @@
+{
+    "name": "survos/geoboundaries-bundle",
+    "description": "Symfony bundle for fetching packaged geoBoundaries (administrative boundary polygons) authority databases.",
+    "keywords": [
+        "symfony",
+        "geoboundaries",
+        "boundaries",
+        "authority",
+        "sqlite"
+    ],
+    "license": "MIT",
+    "type": "symfony-bundle",
+    "require": {
+        "php": "^8.5",
+        "ext-json": "*",
+        "ext-pdo_sqlite": "*",
+        "survos/fetch-bundle": "^2.5",
+        "survos/kit-bundle": "^2.5",
+        "symfony/config": "^8.1",
+        "symfony/console": "^8.1",
+        "symfony/dependency-injection": "^8.1",
+        "symfony/dotenv": "^8.1",
+        "symfony/filesystem": "^8.1",
+        "symfony/http-client": "^8.1",
+        "symfony/http-kernel": "^8.1",
+        "zenstruck/bytes": "^1.1"
+    },
+    "require-dev": {
+        "phpunit/phpunit": "^13.0",
+        "symfony/framework-bundle": "^8.1"
+    },
+    "autoload": {
+        "psr-4": {
+            "Survos\\GeoBoundariesBundle\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Survos\\GeoBoundariesBundle\\Tests\\": "tests/",
+            "Survos\\GeoBoundariesAdmin\\": "admin/src/"
+        },
+        "files": [
+            "admin/src/functions.php"
+        ]
+    }
+}
