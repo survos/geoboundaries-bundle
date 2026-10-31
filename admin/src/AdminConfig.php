@@ -11,6 +11,7 @@ final readonly class AdminConfig
         public string $api,
         public string $sourceDir,
         public string $outputDir,
+        public string $geonamesDir,
         public string $hfAccount,
     ) {
     }
@@ -22,6 +23,7 @@ final readonly class AdminConfig
             api: self::requiredEnv('GEOBOUNDARIES_API'),
             sourceDir: self::requiredEnv('GEOBOUNDARIES_SOURCE_DIR'),
             outputDir: self::requiredEnv('GEOBOUNDARIES_OUTPUT_DIR'),
+            geonamesDir: self::requiredEnv('GEONAMES_DATA_DIR'),
             hfAccount: self::requiredEnv('HF_ACCOUNT'),
         );
     }

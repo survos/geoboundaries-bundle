@@ -17,7 +17,7 @@ use Survos\GeoBoundariesBundle\Dto\Boundary;
  */
 final class GeoBoundariesService
 {
-    private const COLUMNS = 'id, shape_id, iso3, level, name, parent_id, geoname_id, min_x, min_y, max_x, max_y';
+    private const COLUMNS = 'id, shape_id, iso3, level, name, parent_id, geoname_id, geoname_match, min_x, min_y, max_x, max_y';
 
     /** @var array<string, \PDO> */
     private array $connections = [];
@@ -98,6 +98,21 @@ final class GeoBoundariesService
         return is_array($row) ? $this->hydrate($row) : null;
     }
 
+    /**
+     * Boundaries linked to a GeoNames id (admin0/1/2 ids from geonames-bundle), within a country.
+     *
+     * @return list<Boundary>
+     */
+    public function findByGeonameId(int $geonameId, string $iso3): array
+    {
+        $statement = $this->countryConnection($iso3)->prepare(
+            'SELECT '.self::COLUMNS.' FROM boundary WHERE geoname_id = :geoname_id ORDER BY level ASC'
+        );
+        $statement->execute(['geoname_id' => $geonameId]);
+
+        return array_map($this->hydrate(...), $statement->fetchAll(\PDO::FETCH_ASSOC));
+    }
+
     public function sqliteDir(): string
     {
         if (null !== $this->sqliteDir && '' !== trim($this->sqliteDir)) {
@@ -116,7 +131,7 @@ final class GeoBoundariesService
     private function locate(\PDO $pdo, float $lat, float $lon, bool $withGeometry = true): array
     {
         $statement = $pdo->prepare(
-            'SELECT b.id, b.shape_id, b.iso3, b.level, b.name, b.parent_id, b.geoname_id, b.min_x, b.min_y, b.max_x, b.max_y, b.geometry
+            'SELECT b.id, b.shape_id, b.iso3, b.level, b.name, b.parent_id, b.geoname_id, b.geoname_match, b.min_x, b.min_y, b.max_x, b.max_y, b.geometry
              FROM boundary_rtree r JOIN boundary b ON b.id = r.id
              WHERE r.min_x <= :lon AND r.max_x >= :lon AND r.min_y <= :lat AND r.max_y >= :lat
              ORDER BY b.level DESC, b.id ASC'
@@ -150,6 +165,7 @@ final class GeoBoundariesService
             name: (string) $row['name'],
             parentId: null !== $row['parent_id'] ? (int) $row['parent_id'] : null,
             geonameId: null !== $row['geoname_id'] ? (int) $row['geoname_id'] : null,
+            geonameMatch: $row['geoname_match'],
             bbox: [(float) $row['min_x'], (float) $row['min_y'], (float) $row['max_x'], (float) $row['max_y']],
             geometry: is_array($geometry) ? $geometry : null,
         );

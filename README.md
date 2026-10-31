@@ -24,6 +24,7 @@ $boundaries->countryAt(47.141, 9.521);              // Boundary: Liechtenstein (
 $boundaries->boundariesAt(47.141, 9.521, 'LIE');    // most specific first: ADM1, ADM0
 $boundaries->find('Triesen', 'LIE', level: 1);
 $boundaries->children($parentId, 'LIE');
+$boundaries->findByGeonameId(3042058, 'LIE');       // by geonames-bundle id; Boundary::$geonameMatch says how it was linked
 ```
 
 ## Build workflow (admin/, never ships to consumers)
@@ -33,6 +34,7 @@ composer install
 cd admin
 php admin.php download --country=LIE --max-level=2   # API listing + simplified GeoJSON per layer
 php admin.php build --country=LIE                    # geo.sqlite + lie.sqlite
+php admin.php crosswalk                              # link to GeoNames ids (needs geonames-bundle's geo.sqlite)
 ./publish.sh usa,gbr                                 # download + build + hf upload
 ```
 

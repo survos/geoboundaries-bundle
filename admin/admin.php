@@ -5,6 +5,7 @@ declare(strict_types=1);
 
 use Survos\GeoBoundariesAdmin\AdminConfig;
 use Survos\GeoBoundariesAdmin\Command\BuildCommand;
+use Survos\GeoBoundariesAdmin\Command\CrosswalkCommand;
 use Survos\GeoBoundariesAdmin\Command\DownloadCommand;
 use Symfony\Component\Console\Application;
 use Symfony\Component\Dotenv\Dotenv;
@@ -29,5 +30,6 @@ $application = new Application('geoboundaries-admin', '0.1.0');
 $application->addCommands([
     new DownloadCommand($config),
     new BuildCommand($config),
+    new CrosswalkCommand($config),
 ]);
 $application->run();

@@ -42,6 +42,9 @@ php admin.php download "${COUNTRY_FLAGS[@]}" --max-level="${MAX_LEVEL}"
 echo "==> Building SQLite databases"
 php admin.php build "${COUNTRY_FLAGS[@]}"
 
+echo "==> Linking to GeoNames ids"
+php admin.php crosswalk "${COUNTRY_FLAGS[@]}"
+
 if [ "${SKIP_UPLOAD:-0}" = "1" ]; then
     echo "==> SKIP_UPLOAD=1, not publishing."
     exit 0

@@ -100,6 +100,7 @@ CREATE TABLE boundary (
     shape_iso TEXT NULL,
     parent_id INTEGER NULL,
     geoname_id INTEGER NULL,
+    geoname_match TEXT NULL,
     min_x REAL NOT NULL, min_y REAL NOT NULL, max_x REAL NOT NULL, max_y REAL NOT NULL,
     geometry TEXT NOT NULL
 );
