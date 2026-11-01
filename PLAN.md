@@ -43,10 +43,30 @@ GeoNames admin1 codes are often FIPS, so a code match could link the wrong unit.
    fallback if too large). Full-resolution geometry (`--geometry=full`) is untested.
 3. **Rate limits.** The API/GitHub LFS throttling at world scale is unknown; `--delay-ms` and
    resume-by-skip exist, nothing more.
-4. **Publish.** Create the HF dataset, run `publish.sh`; `survos:geoboundaries` is untested
-   against a real dataset.
+4. **Publish.** ON HOLD (2026-11-01, Tac): no HF dataset or Parquet until an internal need exists.
+   `museado/geoboundaries-data` does not exist, so `survos:geoboundaries` 401s; apps copy locally
+   built `geo.sqlite` + `<iso3>.sqlite` into `sqlite_dir` (harvest does this for `usa.sqlite`).
 5. **Licenses.** Layers carry source licenses (ODbL appears). Decide whether to filter, or to
    surface license in `Boundary`.
 6. **Disputed areas / CGAZ.** Per-country layers overlap at disputed borders; the CGAZ composite is
    not packaged.
 7. Name aliases (`alias` table) like geonames; geoBoundaries has one name per unit.
+
+## Status 2026-11-01
+
+- Published as `survos/geoboundaries-bundle` 2.45.11. SQLite is the supported format; it runs
+  anywhere with PDO sqlite (no `pdo_duckdb` needed) when `sqlite_dir` points at local files.
+- Consumers: `harvest` (FPUS Adams County authority, `/authorities/geoboundaries/{iso3}/{id}.geojson`).
+- **Idea, not built: DuckDB/Parquet on S3.** Querying a `.duckdb` or Parquet in place on S3 would
+  replace a dedicated boundary API for occasional lookups; bulk lookups would fetch the file.
+  Caveats: needs `pdo_duckdb` + the spatial extension; remote point lookups cost about 1 s each
+  (folio spike, 2026-10-29) against microseconds for the local R*Tree; HF serves Parquet over
+  `hf://` but cannot serve `.duckdb`. Keep SQLite as the default and add an export later, behind a
+  backend interface in front of `GeoBoundariesService`.
+- **Next consumer: mastheads.** Of 11,479 survey titles, 11,082 have coordinates; 2,640 of the
+  2,642 distinct pairs resolve to a county via `boundariesAt()` (2,544 with a GeoNames link; the
+  other two are bad geocodes). Plan: stamp `countyName` / `countyShapeId` / `countyGeonameId` /
+  `stateGeonameId` plus `AuthorityReference`s in the harvest survey build
+  (`NewspaperSurveyService` / `SurveyProvider`), rebuild the survey folio, then make mastheads'
+  `PlaceTimeline` group counties by `countyShapeId`. Optional later: county outlines via
+  `findByShapeId(..., withGeometry: true)`. Open: where prod gets `usa.sqlite` (16 MB).
