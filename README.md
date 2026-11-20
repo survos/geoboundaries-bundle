@@ -24,9 +24,9 @@ exact test, so no `spatial` extension is needed at runtime. On 3,000 random poin
 the DuckDB and SQLite builds returned the same units for every point.
 
 `survos:geoboundaries` fetches the files from the `museado/geoboundaries-duckdb` (DuckDB) or
-`museado/geoboundaries-data` (SQLite) Hugging Face dataset into `sqlite_dir`. Neither dataset is published
+`museado/geoboundaries-data` (SQLite) Hugging Face dataset into `data_dir`. Neither dataset is published
 yet (see PLAN.md), so a fetch fails until it is. With `duckdb_uri` set to a dataset's `resolve/main` URL, the
-service downloads each file into `sqlite_dir` the first time it needs it and reads it locally after that
+service downloads each file into `data_dir` the first time it needs it and reads it locally after that
 (`duckdb_cache: false` reads the remote file in place instead). The cached file is never refreshed
 automatically: run `survos:geoboundaries --force`, or delete it. Concurrent workers download under a file lock.
 
@@ -78,3 +78,10 @@ geoBoundaries is distributed under CC BY 4.0 but each layer keeps its primary so
 et al. (2020), PLoS ONE 15(4): e0231866, and link www.geoboundaries.org.
 
 See [PLAN.md](./PLAN.md) for what is built and what is next.
+
+## Configuration
+
+`data_dir` is the directory that holds the databases (`<name>.duckdb`, or the legacy `<name>.sqlite`) and the
+downloads cached by `GeoBoundariesService`. It defaults to `APP_SHARED_DIRECTORY/geoboundaries-data`, else
+`var/geoboundaries-data`. `sqlite_dir` and `GeoBoundariesService::sqliteDir()` still work and are deprecated
+since 2.45.76.

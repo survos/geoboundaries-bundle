@@ -18,6 +18,12 @@ use Symfony\Component\HttpKernel\Kernel;
 /** An app that configures nothing: the bundle must compile with only its own defaults. */
 final class TestKernel extends Kernel
 {
+    /** @param array<string, mixed> $bundleConfig */
+    public function __construct(string $environment, bool $debug, private readonly array $bundleConfig = [])
+    {
+        parent::__construct($environment, $debug);
+    }
+
     public function registerBundles(): array
     {
         return [new FrameworkBundle(), new SurvosKitBundle(), new SurvosFetchBundle(), new SurvosJsonlBundle(), new SurvosGeoBoundariesBundle()];
@@ -25,8 +31,11 @@ final class TestKernel extends Kernel
 
     public function registerContainerConfiguration(LoaderInterface $loader): void
     {
-        $loader->load(static function (ContainerBuilder $container): void {
+        $loader->load(function (ContainerBuilder $container): void {
             $container->loadFromExtension('framework', ['secret' => 'test', 'test' => true, 'http_client' => []]);
+            if ([] !== $this->bundleConfig) {
+                $container->loadFromExtension('survos_geo_boundaries', $this->bundleConfig);
+            }
         });
     }
 

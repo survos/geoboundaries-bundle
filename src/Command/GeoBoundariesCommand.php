@@ -16,7 +16,7 @@ use Zenstruck\Bytes;
 /**
  * Fetches the published geoBoundaries authority databases (built + published by this bundle's
  * admin/ tooling, see PLAN.md) from a public Hugging Face dataset (`museado/geoboundaries-duckdb`
- * for DuckDB, `museado/geoboundaries-data` for the legacy SQLite files) into GeoBoundariesService::sqliteDir() -- the same directory the service queries, so
+ * for DuckDB, `museado/geoboundaries-data` for the legacy SQLite files) into GeoBoundariesService::dataDir() -- the same directory the service queries, so
  * fetching and lookup can't disagree on the path. Same fetch strategy as survos:geo.
  */
 #[AsCommand(
@@ -58,7 +58,7 @@ final class GeoBoundariesCommand
         $extension = '.'.$format;
         $repo = self::REPOS[$format];
 
-        $dir = $this->boundaries->sqliteDir();
+        $dir = $this->boundaries->dataDir();
         $io->title('geoBoundaries authority fetch');
         $io->text(sprintf('Target directory: %s (%s from %s)', $dir, $format, $repo));
 

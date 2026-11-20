@@ -25,11 +25,11 @@ final class GeoBoundariesService
     private array $connections = [];
 
     public function __construct(
-        private readonly ?string $sqliteDir,
+        private readonly ?string $dataDir,
         private readonly string $projectDir,
         // Directory or https URL holding <name>.duckdb files (the Hugging Face dataset's resolve/main/ path).
         private readonly ?string $duckdbUri = null,
-        // An https duckdbUri is downloaded once into sqliteDir() and read from there (a read-through
+        // An https duckdbUri is downloaded once into dataDir() and read from there (a read-through
         // cache): a remote read costs several round trips per lookup, and every web request would
         // pay them again. Set to false to read the remote file in place.
         private readonly bool $duckdbCache = true,
@@ -124,10 +124,11 @@ final class GeoBoundariesService
         return array_map($this->hydrate(...), $statement->fetchAll(\PDO::FETCH_ASSOC));
     }
 
-    public function sqliteDir(): string
+    /** The directory that holds the databases (.duckdb, or the legacy .sqlite) and the downloaded cache. */
+    public function dataDir(): string
     {
-        if (null !== $this->sqliteDir && '' !== trim($this->sqliteDir)) {
-            return rtrim($this->sqliteDir, '/');
+        if (null !== $this->dataDir && '' !== trim($this->dataDir)) {
+            return rtrim($this->dataDir, '/');
         }
 
         $sharedDirectory = $_SERVER['APP_SHARED_DIRECTORY'] ?? $_ENV['APP_SHARED_DIRECTORY'] ?? null;
@@ -136,6 +137,12 @@ final class GeoBoundariesService
         }
 
         return $this->projectDir.'/var/geoboundaries-data';
+    }
+
+    /** @deprecated since 2.45.76, use dataDir(): the directory holds DuckDB files now */
+    public function sqliteDir(): string
+    {
+        return $this->dataDir();
     }
 
     /** @return list<Boundary> */
@@ -234,8 +241,8 @@ final class GeoBoundariesService
             return $this->connections[$name];
         }
 
-        $duckdb = $this->sqliteDir().'/'.$name.'.duckdb';
-        $sqlite = $this->sqliteDir().'/'.$name.'.sqlite';
+        $duckdb = $this->dataDir().'/'.$name.'.duckdb';
+        $sqlite = $this->dataDir().'/'.$name.'.sqlite';
         $isDuck = extension_loaded('pdo_duckdb');
         $remote = null !== $this->duckdbUri && '' !== $this->duckdbUri ? rtrim($this->duckdbUri, '/').'/'.$name.'.duckdb' : null;
         $isHttp = null !== $remote && 1 === preg_match('#^https?://#', $remote);

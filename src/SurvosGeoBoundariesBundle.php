@@ -20,8 +20,13 @@ final class SurvosGeoBoundariesBundle extends AbstractSurvosBundle
     {
         $definition->rootNode()
             ->children()
+                ->scalarNode('data_dir')
+                    ->defaultNull()
+                    ->info('Directory holding the geoBoundaries databases (<name>.duckdb, or the legacy <name>.sqlite), and where downloads are cached. Default: APP_SHARED_DIRECTORY/geoboundaries-data, else var/geoboundaries-data.')
+                ->end()
                 ->scalarNode('sqlite_dir')
                     ->defaultNull()
+                    ->setDeprecated('survos/geoboundaries-bundle', '2.45.76', 'The "%node%" option is deprecated, use "data_dir" instead.')
                     ->info('Directory containing the geoBoundaries SQLite databases (default: APP_SHARED_DIRECTORY/geoboundaries-data, else var/geoboundaries-data).')
                 ->end()
                 ->scalarNode('duckdb_uri')
@@ -30,7 +35,7 @@ final class SurvosGeoBoundariesBundle extends AbstractSurvosBundle
                 ->end()
                 ->booleanNode('duckdb_cache')
                     ->defaultTrue()
-                    ->info('Download an https duckdb_uri file once into sqlite_dir and read it locally. Set to false to read the remote file in place.')
+                    ->info('Download an https duckdb_uri file once into data_dir and read it locally. Set to false to read the remote file in place.')
                 ->end()
             ->end();
     }
@@ -43,7 +48,7 @@ final class SurvosGeoBoundariesBundle extends AbstractSurvosBundle
             ->set(GeoBoundariesService::class)
                 ->autowire()
                 ->autoconfigure()
-                ->arg('$sqliteDir', $config['sqlite_dir'])
+                ->arg('$dataDir', $config['data_dir'] ?? $config['sqlite_dir'])
                 ->arg('$projectDir', '%kernel.project_dir%')
                 ->arg('$duckdbUri', $config['duckdb_uri'])
                 ->arg('$duckdbCache', $config['duckdb_cache']);

@@ -29,4 +29,34 @@ final class BundleBootTest extends TestCase
             $kernel->shutdown();
         }
     }
+
+    #[Test]
+    public function dataDirOptionSetsTheDirectory(): void
+    {
+        self::assertSame('/tmp/data-dir-test', $this->service(['data_dir' => '/tmp/data-dir-test'])->dataDir());
+    }
+
+    /** @group legacy */
+    #[Test]
+    public function deprecatedSqliteDirOptionStillWorks(): void
+    {
+        $previous = set_error_handler(static fn (): bool => true, E_USER_DEPRECATED);
+        try {
+            self::assertSame('/tmp/legacy-dir-test', $this->service(['sqlite_dir' => '/tmp/legacy-dir-test'])->dataDir());
+        } finally {
+            restore_error_handler();
+        }
+    }
+
+    /** @param array<string, mixed> $config */
+    private function service(array $config): GeoBoundariesService
+    {
+        $kernel = new TestKernel('test', true, $config);
+        $kernel->boot();
+        try {
+            return $kernel->getContainer()->get(GeoBoundariesService::class);
+        } finally {
+            $kernel->shutdown();
+        }
+    }
 }
