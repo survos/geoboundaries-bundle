@@ -11,7 +11,7 @@ publish SQLite, fetch and query locally. Only the **gbOpen** release type is pac
 DuckDB is the primary format. When `ext-pdo_duckdb` is loaded, `GeoBoundariesService` reads
 `<name>.duckdb` and falls back to `<name>.sqlite` (the legacy format) when that file is missing.
 
-- `geo.duckdb`: `country`, `release` (per-layer provenance: build date, year represented,
+- `world.duckdb`: `country`, `release` (per-layer provenance: build date, year represented,
   license, source) and every country's ADM0 `boundary`
 - `<iso3>.duckdb` (e.g. `usa.duckdb`): that country's `boundary` rows for every level, with `parent_id`
   derived by containment, GeoNames links, a bbox, `geometry_type` and typed `coordinates`
@@ -33,7 +33,7 @@ automatically: run `survos:geoboundaries --force`, or delete it. Concurrent work
 The SQLite files (`geo.sqlite`, `<iso3>.sqlite`) keep GeoJSON text geometry and a `boundary_rtree`.
 
 ```bash
-bin/console survos:geoboundaries                    # geo.duckdb
+bin/console survos:geoboundaries                    # world.duckdb
 bin/console survos:geoboundaries --country=usa,gbr  # + per-country databases
 bin/console survos:geoboundaries --all
 bin/console survos:geoboundaries --format=sqlite    # the legacy SQLite files (default when ext-pdo_duckdb is missing)
@@ -53,7 +53,7 @@ $boundaries->findByGeonameId(3042058, 'LIE');       // by geonames-bundle id; Bo
 composer install
 cd admin
 php admin.php download --country=LIE --max-level=2   # API listing + simplified GeoJSON per layer
-php admin.php build-duckdb --country=LIE             # geo.duckdb + lie.duckdb: parents and GeoNames links included
+php admin.php build-duckdb --country=LIE             # world.duckdb + lie.duckdb: parents and GeoNames links included
 php admin.php build --country=LIE                    # legacy: geo.sqlite + lie.sqlite
 php admin.php crosswalk                              # legacy SQLite only: link to GeoNames ids (build-duckdb does it while building)
 ./publish.sh usa,gbr                                 # download + build + hf upload
@@ -62,7 +62,11 @@ php admin.php crosswalk                              # legacy SQLite only: link 
 `build-duckdb` reads the downloaded GeoJSON with DuckDB's JSON reader, derives parents with the same PHP
 `Geometry` code the service uses at query time, and links units to GeoNames ids using geonames-bundle's
 `geo.duckdb` (or `geo.sqlite`) from `GEONAMES_DATA_DIR`. The directory is the app's choice: this bundle's default is
-`APP_SHARED_DIRECTORY/geoboundaries-data`, separate from geonames-bundle's, because both bundles have a `geo.duckdb`.
+`APP_SHARED_DIRECTORY/geoboundaries-data`, separate from geonames-bundle's, because both bundles have a global database.
+
+The global database is `world.duckdb`, not `geo.duckdb`: Georgia's ISO3 code is `GEO`, so `geo.duckdb` is Georgia's own
+file. Installs from before 2.45.81 (the USA-only data published on 2026-11-20) named it `geo`; the service falls back to
+that name when there is no `world` file. The legacy SQLite files still use `geo.sqlite` (Georgia has no SQLite file).
 
 `download` reads `https://www.geoboundaries.org/api/current/gbOpen/<ISO3>/ALL/`; the API's
 `current` path is newer than the 5.0.0 (Dec 2022) release archives, and its answer is kept as

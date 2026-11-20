@@ -58,7 +58,7 @@ SQL;
     }
 
     /**
-     * Builds geo.duckdb: `country`, `release` (provenance per layer) and every built country's ADM0
+     * Builds world.duckdb (not geo.duckdb, which would collide with Georgia, ISO3 `GEO`): `country`, `release` (provenance per layer) and every built country's ADM0
      * `boundary`, copied from the finished <iso3>.duckdb files so that both agree.
      *
      * @param array<string, array{entries: list<array<string, mixed>>, geoname_id: ?int}> $countries by ISO3

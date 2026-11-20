@@ -24,7 +24,7 @@ class DuckDbGeoBoundariesServiceTest extends GeoBoundariesServiceTest
 
         $builder = new DuckDbBuilder();
         $builder->buildCountry($this->dir.'/xxx.duckdb', 'XXX', $paths);
-        $builder->buildGeo($this->dir.'/geo.duckdb', $this->dir, ['XXX' => ['entries' => $this->releaseEntries(), 'geoname_id' => null]], 'gbOpen');
+        $builder->buildGeo($this->dir.'/world.duckdb', $this->dir, ['XXX' => ['entries' => $this->releaseEntries(), 'geoname_id' => null]], 'gbOpen');
     }
 
     #[Test]

@@ -30,7 +30,7 @@ final class DuckDbReadThroughTest extends DuckDbGeoBoundariesServiceTest
         $this->remote = $this->dir.'/remote';
         $this->cache = $this->dir.'/cache';
         mkdir($this->remote);
-        foreach (['geo', 'xxx'] as $name) {
+        foreach (['world', 'xxx'] as $name) {
             rename($this->dir.'/'.$name.'.duckdb', $this->remote.'/'.$name.'.duckdb');
         }
 

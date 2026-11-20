@@ -226,7 +226,13 @@ final class GeoBoundariesService
 
     private function geoConnection(): \PDO
     {
-        return $this->connectionFor('geo');
+        // The global database is world.duckdb. Installs from before 2.45.81 named it geo, which
+        // collides with Georgia (ISO3 GEO), so fall back to that name only when world is absent.
+        try {
+            return $this->connectionFor('world');
+        } catch (\RuntimeException) {
+            return $this->connectionFor('geo');
+        }
     }
 
     private function countryConnection(string $iso3): \PDO

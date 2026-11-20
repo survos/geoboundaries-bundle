@@ -15,7 +15,7 @@ use Zenstruck\Bytes;
 use function Survos\GeoBoundariesAdmin\localLayerPath;
 use function Survos\GeoBoundariesAdmin\normalizeCodes;
 
-#[AsCommand('build-duckdb', 'Build geo.duckdb and one <iso3>.duckdb per country from the downloaded layers, with parents and the GeoNames crosswalk.')]
+#[AsCommand('build-duckdb', 'Build world.duckdb and one <iso3>.duckdb per country from the downloaded layers, with parents and the GeoNames crosswalk.')]
 final class BuildDuckDbCommand
 {
     public function __construct(
@@ -84,10 +84,10 @@ final class BuildDuckDbCommand
             $io->writeln(sprintf('  %s: %d units, %d without parent, %s', $iso3, $result['units'], $result['orphans'], (string) Bytes::parse((int) filesize($target))));
         }
 
-        $this->builder->buildGeo($outputDir.'/geo.duckdb', $outputDir, $built, $release);
+        $this->builder->buildGeo($outputDir.'/world.duckdb', $outputDir, $built, $release);
         file_put_contents($outputDir.'/README.md', $this->datasetCard($this->config->hfDuckdbRepo));
 
-        $io->success(sprintf('Built geo.duckdb and %d country databases in %s', count($built), $outputDir));
+        $io->success(sprintf('Built world.duckdb and %d country databases in %s', count($built), $outputDir));
 
         return Command::SUCCESS;
     }
@@ -122,7 +122,8 @@ tags: [geography, boundaries, administrative-divisions, duckdb]
 Administrative boundary polygons from [geoBoundaries](https://www.geoboundaries.org) (gbOpen release),
 as typed DuckDB files for `survos/geoboundaries-bundle`.
 
-- `geo.duckdb`: `country`, per-layer `release` provenance, and every country's ADM0 `boundary`.
+- `world.duckdb`: `country`, per-layer `release` provenance, and every country's ADM0 `boundary`. (Not `geo.duckdb`:
+  that is Georgia's own file, because its ISO3 code is `GEO`.)
 - `<iso3>.duckdb`: that country's `boundary` rows for every level (ADM0..ADM5), with `parent_id` derived
   by containment, links to GeoNames ids, a bbox, and `coordinates` as `DOUBLE[][][][]` (a list of polygons,
   rings, points and `[lon, lat]`, rounded to six decimals). `geometry_type` says whether the original shape

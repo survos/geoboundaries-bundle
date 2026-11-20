@@ -62,10 +62,12 @@ final class GeoBoundariesCommand
         $io->title('geoBoundaries authority fetch');
         $io->text(sprintf('Target directory: %s (%s from %s)', $dir, $format, $repo));
 
-        $files = ['geo'.$extension];
+        // The legacy SQLite repo still names the global database geo; DuckDB uses world (see GeoBoundariesService).
+        $global = 'duckdb' === $format ? 'world' : 'geo';
+        $files = [$global.$extension];
         if ($all) {
             foreach ($this->listPublishedFiles($repo) as $path) {
-                if (str_ends_with($path, $extension) && 'geo'.$extension !== $path) {
+                if (str_ends_with($path, $extension) && $global.$extension !== $path) {
                     $files[] = $path;
                 }
             }
