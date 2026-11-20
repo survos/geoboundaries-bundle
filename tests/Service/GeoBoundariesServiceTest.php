@@ -14,37 +14,58 @@ use function Survos\GeoBoundariesAdmin\buildCountryDatabase;
 use function Survos\GeoBoundariesAdmin\createGeoDatabase;
 use function Survos\GeoBoundariesAdmin\finalizeBoundaryIndexes;
 
-final class GeoBoundariesServiceTest extends TestCase
+class GeoBoundariesServiceTest extends TestCase
 {
-    private string $dir;
-    private GeoBoundariesService $service;
+    protected string $dir;
+    protected GeoBoundariesService $service;
 
     protected function setUp(): void
     {
         $this->dir = sys_get_temp_dir().'/geoboundaries-tests-'.uniqid('', true);
         mkdir($this->dir, 0777, true);
 
-        // Country XXX is the square 0..10; ADM1 "West"/"East" split it at x=5; ADM2 "Hole" is a
-        // small square inside West; East has a hole where "Lake" is NOT part of any unit.
-        $adm0 = [$this->feature('XXX-0', 'Xland', $this->rect(0, 0, 10, 10))];
-        $adm1 = [
-            $this->feature('XXX-W', 'West', $this->rect(0, 0, 5, 10)),
-            $this->feature('XXX-E', 'East', $this->rect(5, 0, 10, 10)),
+        $this->buildFixtures();
+
+        $this->service = new GeoBoundariesService($this->dir, $this->dir);
+    }
+
+    /**
+     * Country XXX is the square 0..10; ADM1 "West"/"East" split it at x=5; ADM2 "Westville" is a
+     * small square inside West.
+     *
+     * @return array<int, list<array<string, mixed>>> GeoJSON features per level
+     */
+    protected function layers(): array
+    {
+        return [
+            0 => [$this->feature('XXX-0', 'Xland', $this->rect(0, 0, 10, 10))],
+            1 => [
+                $this->feature('XXX-W', 'West', $this->rect(0, 0, 5, 10)),
+                $this->feature('XXX-E', 'East', $this->rect(5, 0, 10, 10)),
+            ],
+            2 => [$this->feature('XXX-W1', 'Westville', $this->rect(1, 1, 3, 3))],
         ];
-        $adm2 = [$this->feature('XXX-W1', 'Westville', $this->rect(1, 1, 3, 3))];
+    }
 
-        buildCountryDatabase($this->dir.'/xxx.sqlite', 'XXX', [0 => $adm0, 1 => $adm1, 2 => $adm2]);
-
-        $geo = createGeoDatabase($this->dir.'/geo.sqlite');
-        addCountryToGeoDatabase($geo, 'XXX', 'gbOpen', [[
+    /** @return list<array<string, mixed>> */
+    protected function releaseEntries(): array
+    {
+        return [[
             'boundaryID' => 'XXX-ADM0-1', 'boundaryType' => 'ADM0', 'boundaryISO' => 'XXX',
             'boundaryName' => 'Xland', 'Continent' => 'Nowhere', 'buildDate' => 'Dec 12, 2023',
             'admUnitCount' => '1',
-        ]], $adm0);
+        ]];
+    }
+
+    protected function buildFixtures(): void
+    {
+        $layers = $this->layers();
+        buildCountryDatabase($this->dir.'/xxx.sqlite', 'XXX', $layers);
+
+        $geo = createGeoDatabase($this->dir.'/geo.sqlite');
+        addCountryToGeoDatabase($geo, 'XXX', 'gbOpen', $this->releaseEntries(), $layers[0]);
         finalizeBoundaryIndexes($geo);
         unset($geo);
-
-        $this->service = new GeoBoundariesService($this->dir, $this->dir);
     }
 
     protected function tearDown(): void
@@ -136,7 +157,7 @@ final class GeoBoundariesServiceTest extends TestCase
     }
 
     /** @return array<string, mixed> */
-    private function rect(float $x0, float $y0, float $x1, float $y1): array
+    protected function rect(float $x0, float $y0, float $x1, float $y1): array
     {
         return ['type' => 'Polygon', 'coordinates' => [[[$x0, $y0], [$x1, $y0], [$x1, $y1], [$x0, $y1], [$x0, $y0]]]];
     }
@@ -146,7 +167,7 @@ final class GeoBoundariesServiceTest extends TestCase
      *
      * @return array<string, mixed>
      */
-    private function feature(string $shapeId, string $name, array $geometry): array
+    protected function feature(string $shapeId, string $name, array $geometry): array
     {
         return ['type' => 'Feature', 'properties' => ['shapeID' => $shapeId, 'shapeName' => $name, 'shapeISO' => ''], 'geometry' => $geometry];
     }

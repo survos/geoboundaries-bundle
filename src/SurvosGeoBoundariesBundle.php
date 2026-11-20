@@ -24,6 +24,14 @@ final class SurvosGeoBoundariesBundle extends AbstractSurvosBundle
                     ->defaultNull()
                     ->info('Directory containing the geoBoundaries SQLite databases (default: APP_SHARED_DIRECTORY/geoboundaries-data, else var/geoboundaries-data).')
                 ->end()
+                ->scalarNode('duckdb_uri')
+                    ->defaultNull()
+                    ->info('https URL (such as a Hugging Face dataset\'s resolve/main/ path) holding <name>.duckdb files. Used when ext-pdo_duckdb is loaded and no local .duckdb file exists.')
+                ->end()
+                ->booleanNode('duckdb_cache')
+                    ->defaultTrue()
+                    ->info('Download an https duckdb_uri file once into sqlite_dir and read it locally. Set to false to read the remote file in place.')
+                ->end()
             ->end();
     }
 
@@ -36,6 +44,8 @@ final class SurvosGeoBoundariesBundle extends AbstractSurvosBundle
                 ->autowire()
                 ->autoconfigure()
                 ->arg('$sqliteDir', $config['sqlite_dir'])
-                ->arg('$projectDir', '%kernel.project_dir%');
+                ->arg('$projectDir', '%kernel.project_dir%')
+                ->arg('$duckdbUri', $config['duckdb_uri'])
+                ->arg('$duckdbCache', $config['duckdb_cache']);
     }
 }

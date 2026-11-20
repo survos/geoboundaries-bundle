@@ -13,6 +13,8 @@ final readonly class AdminConfig
         public string $outputDir,
         public string $geonamesDir,
         public string $hfAccount,
+        public string $duckdbOutputDir,
+        public string $hfDuckdbRepo,
     ) {
     }
 
@@ -25,6 +27,8 @@ final readonly class AdminConfig
             outputDir: self::requiredEnv('GEOBOUNDARIES_OUTPUT_DIR'),
             geonamesDir: self::requiredEnv('GEONAMES_DATA_DIR'),
             hfAccount: self::requiredEnv('HF_ACCOUNT'),
+            duckdbOutputDir: self::requiredEnv('GEOBOUNDARIES_DUCKDB_OUTPUT_DIR'),
+            hfDuckdbRepo: self::requiredEnv('HF_DUCKDB_REPO'),
         );
     }
 

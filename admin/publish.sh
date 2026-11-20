@@ -10,6 +10,7 @@ set -euo pipefail
 #   MAX_LEVEL=5 ./publish.sh      # include deeper levels
 #   SKIP_UPLOAD=1 ./publish.sh usa # download + build only
 #
+# Publishing is on hold (see PLAN.md): run with SKIP_UPLOAD=1 until there is an internal need.
 # Requires `composer install` in the bundle root, and the `hf` CLI logged in with write access
 # to the dataset repo unless SKIP_UPLOAD=1.
 
@@ -45,6 +46,9 @@ php admin.php build "${COUNTRY_FLAGS[@]}"
 echo "==> Linking to GeoNames ids"
 php admin.php crosswalk "${COUNTRY_FLAGS[@]}"
 
+echo "==> Building DuckDB databases from the downloaded layers (parents and crosswalk included)"
+php admin.php build-duckdb "${COUNTRY_FLAGS[@]}"
+
 if [ "${SKIP_UPLOAD:-0}" = "1" ]; then
     echo "==> SKIP_UPLOAD=1, not publishing."
     exit 0
@@ -53,3 +57,8 @@ fi
 OUTPUT_DIR="$(php -r 'require "../vendor/autoload.php"; (new Symfony\Component\Dotenv\Dotenv())->load(__DIR__."/.env"); echo $_ENV["GEOBOUNDARIES_OUTPUT_DIR"];')"
 echo "==> Uploading ${OUTPUT_DIR} to ${HF_REPO}"
 hf upload "${HF_REPO}" "${OUTPUT_DIR}" . --repo-type dataset
+
+DUCKDB_REPO="${HF_DUCKDB_REPO:-museado/geoboundaries-duckdb}"
+DUCKDB_DIR="$(php -r 'require "../vendor/autoload.php"; (new Symfony\Component\Dotenv\Dotenv())->load(__DIR__."/.env"); echo $_ENV["GEOBOUNDARIES_DUCKDB_OUTPUT_DIR"];')"
+echo "==> Uploading ${DUCKDB_DIR} to ${DUCKDB_REPO}"
+hf upload "${DUCKDB_REPO}" "${DUCKDB_DIR}" . --repo-type dataset

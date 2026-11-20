@@ -14,20 +14,22 @@ use Symfony\Component\Console\Style\SymfonyStyle;
 use Zenstruck\Bytes;
 
 /**
- * Fetches the published geoBoundaries authority SQLite databases (built + published by this
- * bundle's admin/ tooling, see PLAN.md) from the public `museado/geoboundaries-data` Hugging Face
- * dataset into GeoBoundariesService::sqliteDir() -- the same directory the service queries, so
+ * Fetches the published geoBoundaries authority databases (built + published by this bundle's
+ * admin/ tooling, see PLAN.md) from a public Hugging Face dataset (`museado/geoboundaries-duckdb`
+ * for DuckDB, `museado/geoboundaries-data` for the legacy SQLite files) into GeoBoundariesService::sqliteDir() -- the same directory the service queries, so
  * fetching and lookup can't disagree on the path. Same fetch strategy as survos:geo.
  */
 #[AsCommand(
     name: 'survos:geoboundaries',
-    description: 'Fetch published geoBoundaries authority SQLite databases (geo.sqlite + per-country boundary dbs).',
+    description: 'Fetch published geoBoundaries authority databases (geo + per-country boundary dbs), DuckDB by default.',
 )]
 final class GeoBoundariesCommand
 {
-    private const REPO = 'museado/geoboundaries-data';
-    private const BASE_URL = 'https://huggingface.co/datasets/'.self::REPO.'/resolve/main/';
-    private const TREE_URL = 'https://huggingface.co/api/datasets/'.self::REPO.'/tree/main';
+    /** Hugging Face dataset repo per format; both are built by admin/publish.sh. */
+    private const REPOS = [
+        'duckdb' => 'museado/geoboundaries-duckdb',
+        'sqlite' => 'museado/geoboundaries-data',
+    ];
 
     public function __construct(
         private readonly ChunkDownloader $chunkDownloader,
@@ -44,15 +46,26 @@ final class GeoBoundariesCommand
         bool $all = false,
         #[Option('Re-download even if the file already exists locally.')]
         bool $force = false,
+        #[Option('File format: duckdb (default when ext-pdo_duckdb is loaded) or sqlite (legacy).')]
+        ?string $format = null,
     ): int {
+        $format ??= extension_loaded('pdo_duckdb') ? 'duckdb' : 'sqlite';
+        if (!isset(self::REPOS[$format])) {
+            $io->error(sprintf('Unknown format "%s": use duckdb or sqlite.', $format));
+
+            return Command::FAILURE;
+        }
+        $extension = '.'.$format;
+        $repo = self::REPOS[$format];
+
         $dir = $this->boundaries->sqliteDir();
         $io->title('geoBoundaries authority fetch');
-        $io->text(sprintf('Target directory: %s', $dir));
+        $io->text(sprintf('Target directory: %s (%s from %s)', $dir, $format, $repo));
 
-        $files = ['geo.sqlite'];
+        $files = ['geo'.$extension];
         if ($all) {
-            foreach ($this->listPublishedFiles() as $path) {
-                if (str_ends_with($path, '.sqlite') && 'geo.sqlite' !== $path) {
+            foreach ($this->listPublishedFiles($repo) as $path) {
+                if (str_ends_with($path, $extension) && 'geo'.$extension !== $path) {
                     $files[] = $path;
                 }
             }
@@ -60,7 +73,7 @@ final class GeoBoundariesCommand
             foreach (explode(',', $country) as $code) {
                 $code = strtolower(trim($code));
                 if ('' !== $code) {
-                    $files[] = $code.'.sqlite';
+                    $files[] = $code.$extension;
                 }
             }
         }
@@ -81,7 +94,7 @@ final class GeoBoundariesCommand
             }
 
             try {
-                $bytes = $this->chunkDownloader->download(self::BASE_URL.$file, $dest, null, ['overwrite' => $force]);
+                $bytes = $this->chunkDownloader->download('https://huggingface.co/datasets/'.$repo.'/resolve/main/'.$file, $dest, null, ['overwrite' => $force]);
                 ++$fetched;
                 $io->writeln(sprintf('  <info>fetched</info> %s (%s)', $file, Bytes::parse($bytes)->humanize()));
             } catch (\Throwable $e) {
@@ -91,17 +104,17 @@ final class GeoBoundariesCommand
         }
 
         $io->success(sprintf('fetched %d · skipped %d · failed %d  →  %s', $fetched, $skipped, $failed, $dir));
-        $io->note('geoBoundaries: credit Runfola et al. (2020), PLoS ONE 15(4): e0231866, and link www.geoboundaries.org. Layers keep their source license (see the release table in geo.sqlite; some are ODbL).');
+        $io->note('geoBoundaries: credit Runfola et al. (2020), PLoS ONE 15(4): e0231866, and link www.geoboundaries.org. Layers keep their source license (see the release table in the geo database; some are ODbL).');
 
         return $failed > 0 ? Command::FAILURE : Command::SUCCESS;
     }
 
     /** @return list<string> every file path published in the dataset repo */
-    private function listPublishedFiles(): array
+    private function listPublishedFiles(string $repo): array
     {
-        $result = $this->persistentFetcher->fetch(self::TREE_URL.'?recursive=1');
+        $result = $this->persistentFetcher->fetch('https://huggingface.co/api/datasets/'.$repo.'/tree/main?recursive=1');
         if (!$result->isOkay()) {
-            throw new \RuntimeException(sprintf('Failed to list %s: HTTP %d', self::REPO, $result->statusCode));
+            throw new \RuntimeException(sprintf('Failed to list %s: HTTP %d', $repo, $result->statusCode));
         }
         $rows = json_decode($result->contents ?? '', true, flags: JSON_THROW_ON_ERROR);
 
