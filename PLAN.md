@@ -43,7 +43,8 @@ GeoNames admin1 codes are often FIPS, so a code match could link the wrong unit.
    fallback if too large). Full-resolution geometry (`--geometry=full`) is untested.
 3. **Rate limits.** The API/GitHub LFS throttling at world scale is unknown; `--delay-ms` and
    resume-by-skip exist, nothing more.
-4. **Publish.** ON HOLD (2026-11-01, Tac): no HF dataset or Parquet until an internal need exists.
+4. **Publish.** Done for the DuckDB files on 2026-11-20: `museado/geoboundaries-duckdb` (USA ADM0 to ADM2 only, Public
+   Domain layers). Other countries are not built. It was ON HOLD from 2026-11-01 until then (Tac).
    `museado/geoboundaries-data` does not exist, so `survos:geoboundaries` 401s; apps copy locally
    built `geo.sqlite` + `<iso3>.sqlite` into `sqlite_dir` (harvest does this for `usa.sqlite`).
 5. **Licenses.** Layers carry source licenses (ODbL appears). Decide whether to filter, or to
@@ -70,3 +71,15 @@ GeoNames admin1 codes are often FIPS, so a code match could link the wrong unit.
   (`NewspaperSurveyService` / `SurveyProvider`), rebuild the survey folio, then make mastheads'
   `PlaceTimeline` group counties by `countyShapeId`. Optional later: county outlines via
   `findByShapeId(..., withGeometry: true)`. Open: where prod gets `usa.sqlite` (16 MB).
+
+## Status 2026-11-20
+
+- DuckDB is the primary format: `admin.php build-duckdb` reads the downloaded GeoJSON, derives parents with the same
+  `Geometry` code the service uses, runs the GeoNames crosswalk while building (against geonames-bundle's
+  `geo.duckdb`), and stores coordinates as `DOUBLE[][][][]` rounded to six decimals. `usa.duckdb` is 2.9 MB (SQLite:
+  16.5 MB), with identical parents and GeoNames links, and 3,000 random point lookups agree with SQLite.
+- `GeoBoundariesService` reads `<name>.duckdb` when ext-pdo_duckdb 2.0 is loaded, else `<name>.sqlite`. An `https://`
+  `duckdb_uri` is downloaded into `data_dir` on first use (`duckdb_cache: false` reads it in place).
+- The option is `data_dir` (`sqlite_dir` is deprecated since 2.45.76). See
+  `docs/handoffs/2026-11-20-duckdb-authorities-and-poi.md`.
+
